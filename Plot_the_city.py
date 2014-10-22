@@ -30,6 +30,7 @@ from math import radians, cos, sin, asin, sqrt
   <print mode="skeleton" order="quadtile"/>
 </osm-script>
 
+# Go to export data and "Données brutes"
 
 # Version 2 usualy have bigger data than version 1
 
@@ -46,6 +47,9 @@ from math import radians, cos, sin, asin, sqrt
     <recurse type="down"/>
   <print mode="skeleton" order="quadtile"/>
 </osm-script>
+
+# Go to export data and "Données brutes"
+
 """""""""""""""""""""
 
 """""""""""""""""""""
@@ -159,7 +163,6 @@ df_node = pd.DataFrame(node)
 
 data = pd.merge(df_way, df_node, left_on='way_node_id', right_on='node_id', how='left')
 
-
 print "Working on street's name..."
 street = pd.DataFrame(data[['way_name', 'way_id']])
 street.drop_duplicates(inplace=True)
@@ -170,13 +173,19 @@ street['way_name_2'] = street['way_name'].apply(lambda x: clean_stopwords(x.enco
 street['way_name_3'] = street['way_name'].apply(lambda x: clean_stopwords(x.encode('utf-8'), int(2)))
 
 
-# Merging street & dico
-result = pd.merge(street, dico, left_on='way_name_2', right_on='firstname', how='left')
-result = pd.merge(result, dico, left_on='way_name_3', right_on='firstname', how='left', suffixes=('_join_1', '_join_2'))
+# Merging with list of personnality
+result = pd.merge(street, personality, left_on='way_name_2', right_on='perso_name', how='left')
+result = pd.merge(result, personality, left_on='way_name_3', right_on='perso_name', how='left', suffixes=['_1', '_2'])
 
-result['gender_join_1'] = result['gender_join_1'].fillna('Inconnu')
-result['gender_join_2'] = result['gender_join_2'].fillna('Inconnu')
+result['perso_gender_1'] = result['perso_gender_1'].fillna('Inconnu')
+result['perso_gender_2'] = result['perso_gender_2'].fillna('Inconnu')
 
+
+result['way_gender'] = 'Inconnu' # Init way_gender
+
+result['way_gender'] = np.where(result['perso_gender_1'] != 'Inconnu',
+                                result['perso_gender_1'],
+                                result['perso_gender_2'])
 
 # Merging street & title list
 result = pd.merge(result, title, left_on='way_name_2', right_on='title_name', how='left')
@@ -186,67 +195,54 @@ result['title_gender_1'] = result['title_gender_1'].fillna('Inconnu')
 result['title_gender_2'] = result['title_gender_2'].fillna('Inconnu')
 
 # Create a boolean for title matching (0 = False)
-result['title_matching'] = 0
-result['title_matching'][(~result['title_name_1'].isnull()) | (~result['title_name_2'].isnull())] = 1
+#result['title_matching'] = 0
+#result['title_matching'][(~result['title_name_1'].isnull()) | (~result['title_name_2'].isnull())] = 1
 
+result['way_gender'] = np.where(result['way_gender'] == 'Inconnu',
+                                np.where(result['title_gender_1'] != 'Inconnu',
+                                         result['title_gender_1'], 
+                                         result['title_gender_2']),
+                                result['way_gender'])
 
-result['way_gender'] = np.where((result['gender_join_1'] == 'Inconnu') & (result['gender_join_2'] == 'Inconnu') & (result['title_matching'] == 0),
-                            'Inconnu',
-                            np.where((result['gender_join_1'] == 'Inconnu') & (result['gender_join_2'] == 'Inconnu'),
-                                # Checking if Title are unknow                            
-                                np.where(result['title_gender_1'] == 'Inconnu', 
-                                    result['title_gender_2'], 
-                                    result['title_gender_1']),
-                                np.where(result['gender_join_1'] == 'Inconnu',
-                                    result['gender_join_2'],
-                                    result['gender_join_1'])))
+# Merging street & dico
+result = pd.merge(result, dico, left_on='way_name_2', right_on='firstname', how='left')
+result = pd.merge(result, dico, left_on='way_name_3', right_on='firstname', how='left', suffixes=('_join_1', '_join_2'))
 
+result['gender_join_1'] = result['gender_join_1'].fillna('Inconnu')
+result['gender_join_2'] = result['gender_join_2'].fillna('Inconnu')
 
-# Merging with list of personnality
-result = pd.merge(result, personality, left_on='way_name_2', right_on='perso_name', how='left')
-result = pd.merge(result, personality, left_on='way_name_3', right_on='perso_name', how='left', suffixes=['_1', '_2'])
-
-result['perso_gender_1'] = result['perso_gender_1'].fillna('Inconnu')
-result['perso_gender_2'] = result['perso_gender_2'].fillna('Inconnu')
-
-result['way_gender'] = np.where((result['perso_gender_1'] != 'Inconnu') | (result['perso_gender_2'] != 'Inconnu'),
-                            np.where(result['perso_gender_1'] != 'Inconnu',
-                                result['perso_gender_1'],
-                                result['perso_gender_2']),
-                            result['way_gender'])
-                           
+result['way_gender'] = np.where(result['way_gender'] == 'Inconnu',
+                                np.where(result['gender_join_1'] != 'Inconnu',
+                                         result['gender_join_1'],
+                                         result['gender_join_2']),
+                                result['way_gender'])
+                  
 print "Finishing to find gender..."
 
 data = pd.merge(data, result, left_on='way_id', right_on='way_id', how='left', suffixes=['','_2'])
 data = data[['way_id', 'way_name', 'way_gender', 'node_lat', 'node_lon']]
-# A CHANGER !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 data['way_name']= data['way_name'].str.encode('utf-8')
 
 if len(data) > 10000:
-    # Reduire le nombre de point par street
+    # To reduce number of points by street
     print "Delete some points ..."
-
+    
+    print "Number of total points : " + str(len(data))  
+    for i, grp, in data.groupby(['way_id', 'way_gender']):
+        if len(grp) > 3:
+            # we take some nodes between the first and the last one of a street
+            # less node for pretty the same line of street
+            index_to_delete.extend(range(grp.index.tolist()[1], grp.index.tolist()[-1],2))
+        else:
+            pass    
+    data.drop(index_to_delete, inplace=True)
     data['next_lat'] = data['node_lat'].shift(-1)
     data['next_lon'] = data['node_lon'].shift(-1)
 
     data['distance'] = data.apply(lambda row: haversine(row['node_lon'], row['node_lat'], row['next_lon'], row['next_lat']), axis=1)
-    df = data.copy()
-
-    index_to_delete = []
-    number_loop = 0
-    print len(data)
-   # while len(data) > 12000:    
-    for i, grp, in data.groupby(['way_id', 'way_gender']):
-        if len(grp) > 3:
-            index_to_delete.extend(range(grp.index.tolist()[1], grp.index.tolist()[-1],2))
-            #grp.index.tolist()[1::2])
-        else:
-            pass    
-    data.drop(index_to_delete, inplace=True)
     data = data[data.distance > data.distance.quantile(q=0.1)]
-    number_loop = number_loop + 1
-    print str(number_loop) + ' ' + 'Number line delete :' + str(len(index_to_delete)) + ' len data : ' +str(len(data))
-    index_to_delete = []
+    print 'Number line delete :' + str(len(index_to_delete)) + ' len data : ' +str(len(data))
         
 else:
         pass
@@ -328,7 +324,7 @@ for way, X in data.groupby(['way_gender', 'way_id']):
         make_trace(X, street_gender, color)  # append trace to data object
     )
 
-title = "My city's title"
+title = "My City's streets gender"
 
 layout = Layout(
     title=title,             # set plot title
@@ -400,7 +396,7 @@ for way, X in data.groupby(['way_gender', 'way_id']):
     fig['data'][i_trace].update(text=text)         # update trace i
     i_trace += 1                                   # inc. trace counter
 
-py.plot(fig, filename="My city") 
+py.plot(fig, filename="My City's streets gender") 
 
 
 """"""""""""""""""""" 

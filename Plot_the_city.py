@@ -228,6 +228,8 @@ if len(data) > 10000:
     # To reduce number of points by street
     print "Delete some points ..."
     
+    index_to_delete = []    
+    
     print "Number of total points : " + str(len(data))  
     for i, grp, in data.groupby(['way_id', 'way_gender']):
         if len(grp) > 3:

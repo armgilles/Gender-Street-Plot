@@ -31,5 +31,7 @@ How to do :
 
 PS : You can use it with a non french's city, but the gender model is based on French firstname open data. If you want to test it, just change "french" at "stopw = stopwords.words('french')" to "english".
 
+Any help is appreciated to improve personnality & title file for a better matching :]
+
 
 

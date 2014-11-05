@@ -114,12 +114,12 @@ dico.columns = ['firstname', 'gender']
 title = pd.read_csv(data_path_title, sep=';')
 # rework for title
 title.columns = ['title_name', 'title_gender']
-title['title_name'] = title['title_name'].str.encode('utf-8')
+#title['title_name'] = title['title_name'].str.encode('utf-8')
 
 personality = pd.read_csv(data_path_perso, sep=';')
 # rework for personality
 personality.columns = ['perso_name', 'perso_gender']
-personality['perso_name'] = personality['perso_name'].str.encode('utf-8')
+#personality['perso_name'] = personality['perso_name'].str.encode('utf-8')
 
 
 print "Working with OpenStreetMap data..."
@@ -398,7 +398,7 @@ for way, X in data.groupby(['way_gender', 'way_id']):
     fig['data'][i_trace].update(text=text)         # update trace i
     i_trace += 1                                   # inc. trace counter
 
-py.plot(fig, filename="My City's streets gender") 
+#py.plot(fig, filename="My City's streets gender") 
 
 
 """"""""""""""""""""" 

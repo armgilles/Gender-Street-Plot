@@ -5,7 +5,7 @@ Gender-Street-Plot
 - Use Openstreetmap & overpass-turbo.eu to have some data about a city (licence ODbL)
 - Use previous model (https://github.com/armgilles/Street-Gender-CUB) to find gender's streets (files are in data directory).
 
-Result for Bordeaux (French city) : https://plot.ly/~babou/39
+Result for Bordeaux (French city) : https://plot.ly/~babou/210/bordeauxs-street-gender-v4/
 
 Python library :
  - Pandas

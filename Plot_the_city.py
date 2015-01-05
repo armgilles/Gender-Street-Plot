@@ -407,7 +407,7 @@ data_plot.append(trace_type_gender_m)
 data_plot.append(trace_type_gender_f)
 
 
-title = "My city's street gender v4"
+title = "my city's street gender v4"
 
 layout = Layout(
     title=title,
@@ -431,7 +431,7 @@ layout = Layout(
         autotick=True,
         ticks='',
         showticklabels=False,
-        domain=[0, 1],
+        domain=[0.1, 0.95],
         anchor='y1'
     ),
     xaxis2=XAxis(
@@ -502,9 +502,66 @@ for way, X in data.groupby(['way_gender', 'way_id']):
     i_trace += 1                                   # inc. trace counter
 
 
-py.plot(fig, filename="My cuty's street gender") 
+py.plot(fig, filename="My city's street gender") 
 
 
 """"""""""""""""""""" 
 # End Graph Plotly
 """""""""""""""""""""
+
+"""""""""""""""""""""
+# Analyse
+"""""""""""""""""""""
+
+"""
+
+                                
+Faire un groupby sur data.way_name.
+Puis les distance + Nbr_word
+                                
+data['next_lat'] = data['node_lat'].shift(-1)
+data['next_lon'] = data['node_lon'].shift(-1)
+
+data['distance'] = data.apply(lambda row: haversine(row['node_lon'], row['node_lat'], row['next_lon'], row['next_lat']), axis=1)
+
+groupe_way['Nbr_word'] = groupe_way['way_name'].apply(lambda x: number_word(x))
+
+# ok
+
+df = pd.merge(data,result, left_on='way_id', right_on='way_id', how='left', suffixes=['', '_1'])
+df['prenom_bool'] = 0
+df['prenom_bool'] = np.where(df['gender_join_1'] == 'Inconnu',
+                                np.where(df['gender_join_2'] != 'Inconnu',
+                                        '1',
+                                        df['prenom_bool']),
+                                '1')
+
+
+df['title_bool'] = 0
+df['title_bool'] = np.where(df['title_gender_1'] == 'Inconnu',
+                                np.where(df['title_gender_2'] != 'Inconnu',
+                                        '1',
+                                        df['title_bool']),
+                                '1')
+
+
+df['perso_bool'] = 0
+df['perso_bool'] = np.where(df['perso_gender_1'] == 'Inconnu',
+                                np.where(df['perso_gender_2'] != 'Inconnu',
+                                        '1',
+                                        df['perso_bool']),
+                                '1')
+df = df[['way_name', 'way_gender', 'prenom_bool','title_bool', 'perso_bool', 'distance']]
+groupe_way = pd.DataFrame(df.groupby(['way_name', 'way_gender', 'prenom_bool', 'title_bool', 'perso_bool' ]).sum())
+groupe_way.reset_index(inplace=True)
+groupe_way['Nbr_word'] = groupe_way['way_name'].apply(lambda x: number_word(x))
+
+
+# Boxplot
+groupe_way.boxplot(column='distance', by='way_gender')
+groupe_way.boxplot(column='Nbr_word', by='way_gender')
+
+groupe_way.to_csv('groupe_way_ML.csv', encoding='utf-8')
+
+
+"""

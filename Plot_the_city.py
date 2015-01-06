@@ -152,7 +152,7 @@ personality.columns = ['perso_name', 'perso_gender']
 
 print "Working with OpenStreetMap data..."
 # Change "export.json" if you download the file with an other name
-db = json.load(open('export_paris.json'))
+db = json.load(open('export.json'))
 
 """""""""""""""""""""
 Dataframe
@@ -330,7 +330,7 @@ for index, grp, in df_f.groupby(['way_id']):
     plt.plot(grp.node_lon, grp.node_lat, color='m', alpha=0.75, linewidth=0.2, label=grp.way_name.unique())
     #plt.plot(grp.node_lon, grp.node_lat, color='m', alpha=0.65)
 
-plt.title("Bordeaux's gender streets")
+plt.title("My city's gender streets")
 
 plt.savefig('test.pdf', format ='pdf' )
 plt.show()
@@ -424,7 +424,7 @@ data_plot.append(trace_type_gender_m)
 data_plot.append(trace_type_gender_f)
 
 # You can change the title here :
-title = "Paris's street gender"
+title = "Bordeaux's street gender"
 
 layout = Layout(
     title=title,
@@ -453,19 +453,25 @@ layout = Layout(
     ),
     xaxis2=XAxis(
         domain=[0.85, 1],
-        anchor='y2'
+        anchor='x2'
     ),
     yaxis2=YAxis(
         domain=[0.7, 98],
-        anchor='x2'
+        anchor='y2',
+        tickfont=Font(
+            color='rgb(204, 204, 204)'
+        )
     ),
     xaxis3=XAxis(
         domain=[0.85, 1],
-        anchor='y3'
+        anchor='x3'
     ),
     yaxis3=YAxis(
         domain=[0.25, 0.55],
-        anchor='x3'
+        anchor='y3',
+        tickfont=Font(
+            color='rgb(204, 204, 204)'
+        )
     ),
     margin=Margin(
         l=5,
@@ -541,7 +547,7 @@ for way, X in data.groupby(['way_gender', 'way_id']):
     i_trace += 1                                   # inc. trace counter
 
 # You can change the filename here on Plotly
-py.plot(fig, filename="Paris's street gender") 
+py.plot(fig, filename="Bordeaux's street gender") 
 
 
 """"""""""""""""""""" 

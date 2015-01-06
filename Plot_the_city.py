@@ -152,7 +152,7 @@ personality.columns = ['perso_name', 'perso_gender']
 
 print "Working with OpenStreetMap data..."
 # Change "export.json" if you download the file with an other name
-db = json.load(open('export_toulouse.json'))
+db = json.load(open('export_paris.json'))
 
 """""""""""""""""""""
 Dataframe
@@ -297,6 +297,7 @@ groupe_gender_full = pd.DataFrame(groupe_name_full.groupby('way_gender').sum()).
 groupe_gender = pd.DataFrame(groupe_name.groupby('way_gender').sum()).reset_index()
 groupe_gender_full['percent'] = groupe_gender_full['Nbr'].apply(lambda x: 100*x/float(groupe_gender_full.Nbr.sum()))
 groupe_gender['percent'] = groupe_gender['Nbr'].apply(lambda x: 100*x/float(groupe_name.Nbr.sum()))
+groupe_gender['percent'] = groupe_gender['percent'].apply(lambda x : round(float(x), 2)) # Round
 
 # Aalyse by street's type
 groupe_name['type'] = groupe_name['way_name'].apply(lambda x: clean_stopwords_without_dash(x.encode('utf-8'), int(0)))
@@ -307,6 +308,7 @@ top5_type = groupe_type.type[0:5].tolist()
 groupe_type_gender = pd.DataFrame(groupe_name.groupby(['type', 'way_gender']).sum()).reset_index()
 groupe_type_gender = groupe_type_gender[groupe_type_gender.type.isin(top5_type)]
 groupe_type_gender_m = groupe_type_gender[groupe_type_gender['way_gender'] == 'M']
+groupe_type_gender_m.sort(columns='Nbr', ascending=True, inplace=True) # To sort our histo on Plotly by street's type
 groupe_type_gender_f = groupe_type_gender[groupe_type_gender['way_gender'] == 'F']
 
 """""""""""""""""""""
@@ -422,7 +424,7 @@ data_plot.append(trace_type_gender_m)
 data_plot.append(trace_type_gender_f)
 
 # You can change the title here :
-title = "Toulouse's street gender"
+title = "Paris's street gender"
 
 layout = Layout(
     title=title,
@@ -539,7 +541,7 @@ for way, X in data.groupby(['way_gender', 'way_id']):
     i_trace += 1                                   # inc. trace counter
 
 # You can change the filename here on Plotly
-py.plot(fig, filename="Toulouse's street gender") 
+py.plot(fig, filename="Paris's street gender") 
 
 
 """"""""""""""""""""" 

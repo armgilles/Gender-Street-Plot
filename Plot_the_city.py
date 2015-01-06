@@ -83,6 +83,18 @@ def clean_stopwords(x, y):
         return x[y].lower()
     except:
         return('')
+        
+def clean_stopwords_without_dash(x, y):
+    """
+    To split way name for analyse
+    """
+    x = x.replace('É', 'e') # "É" can't be lower()
+    x = x.replace("l'", "") # To better split and matching
+    try:
+        x = [w for w in x.split() if w.lower() not in stopw]
+        return x[y].lower()
+    except:
+        return('')
 
 def number_word(x):
     """
@@ -139,8 +151,8 @@ personality.columns = ['perso_name', 'perso_gender']
 
 
 print "Working with OpenStreetMap data..."
-
-db = json.load(open('export.json'))
+# Change "export.json" if you download the file with an other name
+db = json.load(open('export_toulouse.json'))
 
 """""""""""""""""""""
 Dataframe
@@ -240,7 +252,7 @@ data = data[['way_id', 'way_name', 'way_gender', 'node_lat', 'node_lon']]
 
 data['way_name']= data['way_name'].str.encode('utf-8')
 
-
+print "Analysing data..."
 # To DO : Do we still need reduction of points ?
 
 if len(data) > 100000:
@@ -287,7 +299,7 @@ groupe_gender_full['percent'] = groupe_gender_full['Nbr'].apply(lambda x: 100*x/
 groupe_gender['percent'] = groupe_gender['Nbr'].apply(lambda x: 100*x/float(groupe_name.Nbr.sum()))
 
 # Aalyse by street's type
-groupe_name['type'] = groupe_name['way_name'].apply(lambda x: clean_stopwords(x.encode('utf-8'), int(0)))
+groupe_name['type'] = groupe_name['way_name'].apply(lambda x: clean_stopwords_without_dash(x.encode('utf-8'), int(0)))
 groupe_name.type = groupe_name.type.apply(lambda x: capwords(x)) # For Maj
 groupe_type = pd.DataFrame(groupe_name.groupby(['type']).sum()).reset_index()
 groupe_type.sort('Nbr', ascending=False, inplace=True)
@@ -301,6 +313,7 @@ groupe_type_gender_f = groupe_type_gender[groupe_type_gender['way_gender'] == 'F
 Matplotlib graph
 """""""""""""""""""""
 """
+print "Creating Matplotlib graph..."
 
 fig = plt.figure(figsize=(12,8))
 #for index, grp, in city.groupby(['way_id']):
@@ -330,6 +343,8 @@ End Matplotlib graph
 """""""""""""""""""""
  Graph Plotly
 """""""""""""""""""""
+
+print "Creating Plotly graph..."
 
 colors = dict(
     Inconnu='#414649', 
@@ -406,8 +421,8 @@ trace_type_gender_f = Bar(
 data_plot.append(trace_type_gender_m)
 data_plot.append(trace_type_gender_f)
 
-
-title = "my city's street gender v4"
+# You can change the title here :
+title = "Toulouse's street gender"
 
 layout = Layout(
     title=title,
@@ -439,7 +454,7 @@ layout = Layout(
         anchor='y2'
     ),
     yaxis2=YAxis(
-        domain=[0.7, 1],
+        domain=[0.7, 98],
         anchor='x2'
     ),
     xaxis3=XAxis(
@@ -467,7 +482,29 @@ layout = Layout(
         font=Font(size=14),   # increase font size (default is 12)
         #bgcolor='#FFFFFF',    # white background
         borderpad=4           # set border/text space (in pixels)
-    )
+        ),
+   Annotation(
+        text='%',  # annotation text
+        showarrow=False,                     # remove arrow 
+        xref='paper',   # use paper coords
+        yref='paper',   #  for both x and y coordinates
+        x=0.925,         # x-coord (slightly of plotting area edge)
+        y=1.05,         # y-coord (slightly of plotting area edge)
+        font=Font(size=14),   # increase font size (default is 12)
+        #bgcolor='#FFFFFF',    # white background
+        borderpad=4           # set border/text space (in pixels)
+        ),
+    Annotation(
+        text='Top 5 Type',  # annotation text
+        showarrow=False,                     # remove arrow 
+        xref='paper',   # use paper coords
+        yref='paper',   #  for both x and y coordinates
+        x=0.96,         # x-coord (slightly of plotting area edge)
+        y=0.59,         # y-coord (slightly of plotting area edge)
+        font=Font(size=14),   # increase font size (default is 12)
+        #bgcolor='#FFFFFF',    # white background
+        borderpad=4           # set border/text space (in pixels)
+        ) 
     ])
 )
 
@@ -501,8 +538,8 @@ for way, X in data.groupby(['way_gender', 'way_id']):
     fig['data'][i_trace].update(text=text)         # update trace i
     i_trace += 1                                   # inc. trace counter
 
-
-py.plot(fig, filename="My city's street gender") 
+# You can change the filename here on Plotly
+py.plot(fig, filename="Toulouse's street gender") 
 
 
 """"""""""""""""""""" 
